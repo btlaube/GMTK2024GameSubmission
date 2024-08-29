@@ -37,7 +37,6 @@ public class ButtonCooldown : MonoBehaviour
                 myButton.interactable = false;
             Invoke("ResetCooldown", cooldownDuration);
             cooldown = true;
-            Debug.Log("pRESSED");
         }
     }
 
@@ -47,7 +46,6 @@ public class ButtonCooldown : MonoBehaviour
             if (myButton != null)
                 myButton.interactable = true;
         cooldown = false;
-        Debug.Log("Reset");
     }
 
 }

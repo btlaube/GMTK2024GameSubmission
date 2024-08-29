@@ -1,49 +1,53 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using System.Linq;  // Added for Linq functions
 
-public class PlaceableObject : MonoBehaviour
+public class PlaceableObject : GridObject
 {
     [SerializeField] private InputManager inputManager;
-    [SerializeField] private Grid grid;
 
     private bool isPlacingObject = false;
+    private bool stoppedPlacing = false;
     private Vector3 initialPosition;
     private Camera m_Camera;
 
-    // Track the grid cells this object occupies
-    public Vector3Int[] occupiedCells;
+    // Correct solution
+    [SerializeField] private Vector3 correctPos;
+    [SerializeField] private Vector3 correctScale;
 
-    void Awake()
+    private AudioHandler audioHandler;
+
+    protected override void Awake()
     {
+        base.Awake();
         m_Camera = Camera.main;
+
+        audioHandler = GetComponent<AudioHandler>();
     }
 
-    void Start()
+    protected override void Update()
     {
-        UpdateOccupiedCells();
-    }
+        base.Update();
 
-    void Update()
-    {
         if (isPlacingObject)
         {
             UpdateObjectPosition();
             UpdateOccupiedCells();
         }
+        if (stoppedPlacing)
+        {
+            stoppedPlacing = false;
+            UpdateOccupiedCells();
+        }
     }
-
-    // private void OnMouseDown()
-    // {
-    //     if (!isPlacingObject)
-    //     {
-    //         StartPlacingObject();
-    //     }
-    // }
 
     public void StartPlacingObject()
     {
+        if (audioHandler != null)
+        {
+            audioHandler.Play("PickUp");
+        }
+
         isPlacingObject = true;
         initialPosition = transform.position;
 
@@ -56,7 +60,12 @@ public class PlaceableObject : MonoBehaviour
 
     public void StopPlacingObject()
     {
+        if (audioHandler != null)
+        {
+            audioHandler.Play("PutDown");
+        }
         isPlacingObject = false;
+        stoppedPlacing = true;
     }
 
     private void UpdateObjectPosition()
@@ -66,53 +75,23 @@ public class PlaceableObject : MonoBehaviour
         transform.position = grid.CellToWorld(gridPosition);
     }
 
-    public void UpdateOccupiedCells()
+    public void ReturnToInitialPosition()
     {
-        List<Vector3Int> occupiedCellsList = new List<Vector3Int>();
-
-        // Assuming that the object's children represent the shape's individual cells
-        foreach (Transform child in transform)
+        // Debug.Log("Cant go there");
+        if (audioHandler != null)
         {
-            Vector3Int gridPosition = grid.WorldToCell(child.position);
-            occupiedCellsList.Add(gridPosition);
-            Debug.Log($"Added {gridPosition} to the list");
+            audioHandler.Play("Invalid");
         }
+        transform.position = initialPosition;
 
-        occupiedCells = occupiedCellsList.ToArray();
+        UpdateOccupiedCells();
     }
 
-    public bool IsPositionValid(Vector3Int newPosition)
+    public bool CheckPlaceableObjectSolution()
     {
-        foreach (Vector3Int cell in occupiedCells)
-        {
-            Vector3Int potentialPosition = newPosition + (cell - grid.WorldToCell(transform.position));
-            if (!IsCellValid(potentialPosition))
-            {
-                return false;
-            }
-        }
-        return true;
+        bool fart = (transform.position == correctPos) && (transform.localScale == correctScale);
+        Debug.Log($"{transform.position} and {transform.localScale} is {fart}");
+        return fart;
     }
 
-    private bool IsCellValid(Vector3Int cellPosition)
-    {
-        // Assuming the grid is infinite or you have predefined bounds, you might need to check against them.
-        // Example: if you have bounds, check them here (e.g., if (cellPosition.x < minX || cellPosition.x > maxX)...)
-
-        // Check if the cell is occupied by another object
-        foreach (GameObject boardObject in FindObjectOfType<GridManager>().objectsOnGrid)
-        {
-            var placeableObject = boardObject.GetComponent<PlaceableObject>();
-            if (boardObject != gameObject && placeableObject != null && placeableObject.occupiedCells.Contains(cellPosition))
-            {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public bool ContainsCell(Vector3Int cellPosition)
-    {
-        return occupiedCells.Contains(cellPosition);
-    }
 }

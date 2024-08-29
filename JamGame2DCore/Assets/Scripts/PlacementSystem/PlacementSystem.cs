@@ -86,8 +86,23 @@ public class PlacementSystem : MonoBehaviour
             holdingObject = false;
             selectedObject = null;
         }
-        // If invalid position reset to where it was picked up
+        else
+        {
+            // If invalid position reset to where it was picked up
+            selectedObject.GetComponent<PlaceableObject>().StopPlacingObject();
+            selectedObject.GetComponent<PlaceableObject>().ReturnToInitialPosition();
+            // selectedObject.GetComponent<PlaceableObject>().UpdateOccupiedCells();
+            holdingObject = false;
+            selectedObject = null;
+        }
+        
+        // Update swap chambers
+        ScaleTransfer scaleTransfer = FindObjectOfType<ScaleTransfer>();
+        Vector3Int newGridPosition = grid.WorldToCell(mousePosition);
+        scaleTransfer.UpdateObjectsInChambers();
+        
     }
+
 
     private bool CheckPlacement(GameObject objectToPlace)
     {
